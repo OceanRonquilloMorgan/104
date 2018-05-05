@@ -61,9 +61,11 @@ Operators are symbols such as ==, !=, = (assignment),
 Using operators is really just shorthand for calling a function. 
 
 When you write the following code:
+
     if ( a1 == a2 ) cout << "They’re equal!";
 
 it actually gets translated to
+
     if (operator==(a1, a2)) cout << "They’re equal!";
 
 In this example, we use overload + to add a string and a char.
@@ -170,7 +172,7 @@ int main(void)
 
 What we’d really like to do is say that these variables are 
 still private, but we’ll make an exception just for this one 
-particular function operator\*. 
+particular function `operator*`. 
 C++ has a mechanism for doing this: 
 you do this by declaring a function a friend of a class
 
@@ -269,40 +271,88 @@ has not been implemented.
 
 ```c++
 #include <iostream>
-
 using namespace std;
 
-class Student {
-    public:
-        Student(int id, string name):
-            _id(id), _name(name) {}
-        int _id;
-        string _name;
+class MyArray
+{
+ public:
+  MyArray() { cout << "In default constructor" << endl;
+              dat = NULL; len = 0; }
+  MyArray(int d[], int num); //normal
+  MyArray(const MyArray& other); // copy constructor
+   MyArray& operator=(const MyArray& other);  
+  ~MyArray();
+  int& operator[](int loc) { return dat[loc]; }
+  int const & operator[](int loc) const { return dat[loc]; }
+  int size() const         { return len;      }
+ private:
+  int len; int *dat;
 
-    Student* deepCopy() {
-        return new Student(_id, _name);
-    }
-    Student& operator=(const Student &rhs) {
-        if( this == &rhs ) return *this;
-
-        this->_id = rhs._id;
-        this->_name = rhs._name;
-
-        return *this;
-    }
 };
 
-int main(void) {
+// Normal constructor
+MyArray::MyArray(int d[], int num)
+{
+  cout << "In normal constructor" << endl;
+  dat = new int[num]; len = num;
+  for(int i=0; i < len; i++){
+    dat[i] = d[i];
+  }
+}
 
-    // object
-    Student* student = new Student(1, "alex");
-    Student* cp = student->deepCopy();
+// Copy Constructor
+MyArray::MyArray(const MyArray& other)
+{
+   cout << "In copy constructor" << endl;
+   len = other.len;
+   dat = new int[len];
+   for(int i=0; i < len; i++){
+     dat[i] = other.dat[i];  
+   }
+}
 
-    cp->_name = "sergio";
+// Assignment operator
+ MyArray& MyArray::operator=(const MyArray& other)  
+{
+   cout << "In assignment operator" << endl;
+    if(this == &other) return *this;
+    if(dat != NULL) { delete [] dat; }
+    len = other.len;
+    dat = new int[len];
+    for(int i=0; i < len; i++){
+       dat[i] = other.dat[i];   
+    }
+   return *this;
+      
+}
 
-    cout << "st: " << student->_name << endl;
-    cout << "cp: " << cp->_name << endl;
+MyArray::~MyArray()
+{  
+ cout << "In destructor" << endl;
+ delete [] dat; 
+}
 
+
+void printVals(const MyArray& arr)
+{
+  for(int i=0; i < arr.size(); i++){
+    cout << arr[i] << " ";
+  }
+  cout << endl;
+}
+
+int main()
+{
+  int vals[] = {9,3,7,5};
+  MyArray a1(vals,4);
+  MyArray a2(a1); 
+  MyArray a3 = a1; 
+  MyArray a4;  
+
+  a1 = a1;
+  printVals(a1);
+   
+  return 0;
 }
 ```
 
@@ -398,83 +448,172 @@ int main(void)
     delete t;
 }
 ```
+
 ## Sorting Algorithms
 
-### Insertion sort
+### Bubble Sort
+
+*From [Lecture slides, p 6](https://piazza-resources.s3.amazonaws.com/jc0zlm0ibz12df/jdz47r0f1qr2y0/L14_sorting.pdf?AWSAccessKeyId=AKIAIEDNRLJ4AZKBW6HA&Expires=1519941734&Signature=EE3ytUXJDww3Z1vbmkgS4OZi6%2Bk%3D)*
+
+Main Idea: Bubble up the largest value to the greatest index on list
+
+- Comparing neighbors, moving larger item up and smaller item down until largest item is at greatest index. Repeat on list of remaining elements.
+- Outer loop counts each pass and keeps largest unsorted index
+- Inner loop starts at the lowest index bubbling up largest element to the greatest unsorted index
 
 ```c++
 #include <iostream>
 
 using namespace std;
 
-int main(int argc, const char * argv[]) {
 
-    int a[] = {4, 3, 1, 5, 9};
-	int arraySize = 5;
+void printVector(vector<int> v) {
+    for(int i = 0; i < v.size(); i++) {
+        cout << v[i] << " ";
+    }
+    cout << endl;
+}
 
-	// we begin at 1
-    for(int i = 1; i < arraySize - 1; i++)
-    {
-        // keep track of where we are
-        int element = a[i];
-        int j = i;
-
-        // while within bounds and previous element is greater than current
-        while(j > 0 && a[j - 1] > element)
-        {
-            // move one space
-            a[j] = a[j - 1];
-            j -= 1;
+void bsort(vector<int> mylist) {
+    
+    for(int i = (int) mylist.size() - 1; i > 0; i--) {
+        
+        for(int j = 0; j < i; j++) {
+            
+            // compares with neighbor
+            if( mylist[j] > mylist[j + 1] ) {
+                
+                // swap j and j + 1
+                int temp = mylist[j];
+                mylist[j] = mylist[j + 1];
+                mylist[j + 1] = temp;
+            }
+            printVector(mylist);
         }
-        // save element in new position
-        a[j] = element;
     }
+}
 
-	// we are done. Print the result
-    for(int i = 0; i < 4; i++)
-    {
-        cout << "element: " << a[i] << endl;
-    }
+int main(void)
+{
+    vector<int> v;
+    v.insert(v.end(), {7, 3, 8, 6, 5, 1});
+    
+    cout << "Printing vector: " << endl;
+    printVector(v);
+    
+    cout << "Bubble sorting: " << endl;
+    bsort(v);
 }
 ```
 
+This prints as follows
+```
+Printing vector:
+7 3 8 6 5 1
+Bubble sorting:
+3 7 8 6 5 1
+3 7 8 6 5 1
+3 7 6 8 5 1
+3 7 6 5 8 1
+3 7 6 5 1 8
+3 7 6 5 1 8
+3 6 7 5 1 8
+3 6 5 7 1 8
+3 6 5 1 7 8
+3 6 5 1 7 8
+3 5 6 1 7 8
+3 5 1 6 7 8
+3 5 1 6 7 8
+3 1 5 6 7 8
+1 3 5 6 7 8
+```
 ### Selection Sort
 
-This is one of the types of sorting algorithms
+*From [Lecture slides, p 14](https://piazza-resources.s3.amazonaws.com/jc0zlm0ibz12df/jdz47r0f1qr2y0/L14_sorting.pdf?AWSAccessKeyId=AKIAIEDNRLJ4AZKBW6HA&Expires=1519941734&Signature=EE3ytUXJDww3Z1vbmkgS4OZi6%2Bk%3D)*
+
+Main Idea: Selection sort finds min (or max) and puts at smallest unsorted or (greatest unsorted) index
+
+- Unlike Bubble Sort, Selection Sort only performs one swap per iteration
+- Starts with the whole array unsorted and slowly the sorted portion grows
+- In this implementation, find min and put at start of list
 
 ```c++
-#include <iostream>
-#include <vector>
-
-using namespace std;
-
-int main(void) {
-
-    static const int a[] = { 13, 9, 6, 3, 15, 2, 21, 4, 16, 8, 11 };
-    vector<int> v(a, a + sizeof(a)/sizeof(a[0]));
-
-
-    // for each element in vector
-    for(int i = 0, len = (int)v.size(); i < len; i++) {
-
-        // let's begin with the starting value
+// selection_sort.cpp
+// relevant fragment
+void ssort(vector<int> mylist)
+{
+    for(int i = 0, len = (int)mylist.size(); i < len - 1; i++){
+        
+        // min begins as the first element
         int min = i;
-
-        // compare with the rest of the array
-        for(int j = i; j < len; j++) {
-
-            // if find a smaller one, save as the new min
-            if(v.at(min) > v.at(j)) {
+        
+        for(int j = i + 1; j < (int) mylist.size(); j++){
+        
+            // if min is smaller than current value, save new min
+            if(mylist[j] < mylist[min]) {
                 min = j;
             }
+            
         }
-
-        // when finish iterating, save the min
-        if(min != i) {
-            swap(v.at(i), v.at(min));
-            cout << v.at(i) << endl;
-        }
+        // swap i and min
+        int temp = mylist[min];
+        mylist[min] = mylist[i];
+        mylist[i] = temp;
+        
+        
+        printVector(mylist);
     }
 }
 ```
 
+This prints the following
+```
+Printing vector:
+7 3 8 6 5 1
+Selection sorting:
+1 3 8 6 5 7
+1 3 8 6 5 7
+1 3 5 6 8 7
+1 3 5 6 8 7
+1 3 5 6 7 8
+```
+
+### Insertion Sort
+
+*From [Lecture slides, p 21](https://piazza-resources.s3.amazonaws.com/jc0zlm0ibz12df/jdz47r0f1qr2y0/L14_sorting.pdf?AWSAccessKeyId=AKIAIEDNRLJ4AZKBW6HA&Expires=1519941734&Signature=EE3ytUXJDww3Z1vbmkgS4OZi6%2Bk%3D)*
+
+Main Idea: Imagine we pick up one element of the array at a time and then just insert it into the right position.
+
+The relevant port of the code
+
+```c++
+void isort(vector<int> mylist) {
+
+    for(int i = 1; i < (int) mylist.size(); i++){
+
+        int val = mylist[i];
+        int hole = i;
+
+        while(hole > 0 && val < mylist[hole - 1]) {
+
+            mylist[hole] = mylist[hole - 1];
+            hole--;
+        }
+        mylist[hole] = val;
+        printVector(mylist);
+    }
+}
+```
+
+This prints
+
+```
+Printing vector:
+7 3 8 6 5 1
+Insertion sorting:
+3 7 8 6 5 1
+3 7 8 6 5 1
+3 6 7 8 5 1
+3 5 6 7 8 1
+1 3 5 6 7 8
+```
